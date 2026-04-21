@@ -50,6 +50,7 @@ contract DrugSupplyChain {
     constructor() {
         admin = msg.sender;
         roles[msg.sender] = Role.Manufacturer;
+        emit RoleAssigned(msg.sender, Role.Manufacturer);
     }
 
     // ================= ROLE MANAGEMENT =================

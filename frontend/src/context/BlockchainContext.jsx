@@ -16,131 +16,68 @@ export const useBlockchain = () => {
 export const BlockchainProvider = ({ children }) => {
   const [account, setAccount] = useState('');
   const [contract, setContract] = useState(null);
-  const [role, setRole] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState(null); // null means still loading
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasChecked, setHasChecked] = useState(false);
   const [error, setError] = useState('');
 
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
         alert('Please install MetaMask!');
-        window.open('https://metamask.io/download/', '_blank');
         return;
       }
 
       setLoading(true);
-      setError('');
-
-      // Request account access
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      });
-      
-      console.log('Connected accounts:', accounts);
-      
-      if (accounts.length === 0) {
-        throw new Error('No accounts found');
-      }
-
-      // For ethers v6 - BrowserProvider instead of Web3Provider
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      
-      // Check network
-      const network = await provider.getNetwork();
-      console.log('Network:', network);
-      
-      // In ethers v6, chainId is a bigint
-      const chainId = Number(network.chainId);
-      console.log('Chain ID:', chainId);
-      
-      if (chainId !== 31337) {
-        alert('Please switch to Hardhat Local network (Chain ID: 31337)');
-        try {
-          await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0x7A69' }],
-          });
-        } catch (switchError) {
-          if (switchError.code === 4902) {
-            alert('Please add Hardhat network manually');
-          }
-        }
-        return;
-      }
-
-      // Create contract instance
-      console.log('Creating contract with address:', CONTRACT_ADDRESS);
       const drugContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
       
+      const [userRole, adminAddress] = await Promise.all([
+        drugContract.roles(accounts[0]),
+        drugContract.admin()
+      ]);
+
       setAccount(accounts[0]);
       setContract(drugContract);
-      
-      // Get user role
-      try {
-        const userRole = await drugContract.roles(accounts[0]);
-        setRole(Number(userRole));
-        console.log('Your role:', Number(userRole));
-      } catch (roleError) {
-        console.error('Error getting role:', roleError);
-        setRole(0);
-      }
-      
-      alert('✅ Wallet connected successfully!');
+      setRole(Number(userRole));
+      setIsAdmin(accounts[0].toLowerCase() === adminAddress.toLowerCase());
       
     } catch (error) {
       console.error('Connection error:', error);
       setError(error.message);
-      alert('Error: ' + error.message);
     } finally {
       setLoading(false);
+      setHasChecked(true);
     }
   };
 
   useEffect(() => {
-    // Check if already connected
     const checkConnection = async () => {
       if (window.ethereum) {
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_accounts' 
-        });
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          // Auto-connect if already have accounts
-          connectWallet();
+          await connectWallet();
+        } else {
+          setLoading(false);
+          setHasChecked(true);
         }
+      } else {
+        setLoading(false);
+        setHasChecked(true);
       }
     };
-    
     checkConnection();
 
-    // Listen for account changes
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          window.location.reload();
-        } else {
-          setAccount('');
-          setContract(null);
-          setRole(0);
-        }
-      });
-
-      window.ethereum.on('chainChanged', () => {
-        window.location.reload();
-      });
+      window.ethereum.on('accountsChanged', () => window.location.reload());
+      window.ethereum.on('chainChanged', () => window.location.reload());
     }
   }, []);
 
-  const value = {
-    account,
-    contract,
-    role,
-    loading,
-    error,
-    connectWallet
-  };
+  const value = { account, contract, role, isAdmin, loading, hasChecked, error, connectWallet };
 
   return (
     <BlockchainContext.Provider value={value}>

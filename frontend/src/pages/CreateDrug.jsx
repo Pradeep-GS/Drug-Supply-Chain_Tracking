@@ -47,7 +47,7 @@ const CreateDrug = () => {
       const tx = await contract.createDrug(
         formData.name, 
         formData.batchId, 
-        expiryTimestamp
+        formData.expiryDate
       );
       
       console.log('Transaction sent:', tx.hash);

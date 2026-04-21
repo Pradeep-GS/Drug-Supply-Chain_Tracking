@@ -10,6 +10,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import CreateDrug from './pages/CreateDrug';
 import TrackDrug from './pages/TrackDrug';
 import VerifyDrug from './pages/VerifyDrug';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -20,11 +21,40 @@ function App() {
           <div className="container mx-auto px-4 py-8">
             <Routes>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/manufacturer" element={<ManufacturerDashboard />} />
-              <Route path="/distributor" element={<DistributorDashboard />} />
-              <Route path="/pharmacy" element={<PharmacyDashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/create-drug" element={<CreateDrug />} />
+              
+              {/* Manufacturer Only */}
+              <Route path="/manufacturer" element={
+                <ProtectedRoute requiredRole={1}>
+                  <ManufacturerDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/create-drug" element={
+                <ProtectedRoute requiredRole={1}>
+                  <CreateDrug />
+                </ProtectedRoute>
+              } />
+
+              {/* Distributor Only */}
+              <Route path="/distributor" element={
+                <ProtectedRoute requiredRole={2}>
+                  <DistributorDashboard />
+                </ProtectedRoute>
+              } />
+
+              {/* Pharmacy Only */}
+              <Route path="/pharmacy" element={
+                <ProtectedRoute requiredRole={3}>
+                  <PharmacyDashboard />
+                </ProtectedRoute>
+              } />
+
+              {/* Admin Only */}
+              <Route path="/admin" element={
+                <ProtectedRoute adminOnly={true}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+
               <Route path="/track/:batchId" element={<TrackDrug />} />
               <Route path="/verify" element={<VerifyDrug />} />
               <Route path="*" element={<Navigate to="/" />} />
