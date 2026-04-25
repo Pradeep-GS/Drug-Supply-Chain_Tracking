@@ -95,10 +95,6 @@ const DistributorDashboard = () => {
     try {
       setLoading(true);
       
-      if (!pharmacyAddress || !pharmacyAddress.startsWith('0x')) {
-        throw new Error('Invalid pharmacy address');
-      }
-      
       console.log('Shipping drug:', batchId, 'to pharmacy:', pharmacyAddress);
       
       const tx = await contract.transferDrug(batchId, pharmacyAddress);
@@ -219,10 +215,8 @@ const DistributorDashboard = () => {
                       <button
                         onClick={() => {
                           const pharmacyAddr = prompt('Enter pharmacy address:');
-                          if (pharmacyAddr && pharmacyAddr.startsWith('0x')) {
+                          if (pharmacyAddr) {
                             handleShipToPharmacy(shipment.batchId, pharmacyAddr);
-                          } else {
-                            alert('Please enter a valid Ethereum address starting with 0x');
                           }
                         }}
                         disabled={loading}

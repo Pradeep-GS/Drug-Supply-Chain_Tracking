@@ -70,7 +70,7 @@ const ManufacturerDashboard = () => {
       if (!transferData.batchId || !transferData.distributor) {
         throw new Error('Please fill all fields');
       }
-      
+
       console.log('Transferring drug:', transferData.batchId, 'to', transferData.distributor);
       
       // Call contract method
